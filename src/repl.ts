@@ -9,23 +9,25 @@ export function cleanInput(input: string): string[] {
 export async function startREPL(state: State): Promise<void> {
     state.readline.prompt();
     state.readline.on("line", async (input: string) => {
-        if (input.length < 1) {
+        const words = cleanInput(input);
+        if (words.length === 0) {
             console.log("Please enter a command");
             state.readline.prompt();
             return;
-        } else {
-            try {
-                const word = cleanInput(input);
-                if (word[0] in state.commands) {
-                    await state.commands[word[0]].callback(state);
-                    state.readline.prompt();
-                } else {
-                    console.log(`Command not found: ${word[0]}`);
-            }
-        } catch (err: unknown) {
-                console.error("Error executing command:", err);
         }
-    }
+        const commandName = words[0];
+        const args = words.slice(1);
+
+        if (commandName in state.commands) {
+            try {
+                await state.commands[commandName].callback(state, ...args);
+            } catch (err) {
+                console.error("Error executing command:", err);
+            }
+        } else {
+            console.log(`Command not found: ${commandName}`);
+        }
+        state.readline.prompt();
     });
 }
 
